@@ -60,12 +60,7 @@ void call() {
       systemTestsTestMark: fne(params.SYSTEM_TESTS_TEST_MARK, pipelineDefaults.capsuleSystemTests.systemTestsTestMark),
       systemTestsTestDirectory: fne(params.SYSTEM_TESTS_TEST_DIRECTORY, pipelineDefaults.capsuleSystemTests.systemTestsTestDirectory),
       systemTestsDebug: params.SYSTEM_TESTS_DEBUG,
-      systemTestsRunTimeout: params.TIMEOUT,
-
-      preapareSteps: {
-          // Move it to AMI, will be removed soon
-          sh 'sudo apt-get install -y daemonize'
-      }
+      systemTestsRunTimeout: params.TIMEOUT
     ])
   }
 }
