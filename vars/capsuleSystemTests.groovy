@@ -106,7 +106,7 @@ void call(Map additionalConfig) {
         ansiColor('xterm') {
           sh 'make check'
 
-          withDockerRegistry(config.dockerCredentialsId) {
+          withDockerRegistry([credentialsId: config.dockerCredentialsId, url: 'https://ghcr.io']) {
             sh 'make prepare-test-docker-image'
             sh 'make build-test-proto'
           }
