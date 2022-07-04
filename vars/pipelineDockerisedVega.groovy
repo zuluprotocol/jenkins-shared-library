@@ -112,6 +112,7 @@ void call(Map config=[:]) {
                                         }
                                     }
                                 } catch (err) {
+                                    sh 'sleep 3600'
                                     dockerisedVega.printAllContainers()
                                     dockerisedVega.printAllLogs()
                                     error("dockerised-vega failed to start: ${err.message}")
