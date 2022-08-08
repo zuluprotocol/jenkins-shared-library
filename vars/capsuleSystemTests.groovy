@@ -45,8 +45,7 @@ void call(Map additionalConfig) {
 
               sh """
 mkdir -p ~/.ssh;
-echo "host github.com" >> ~/.ssh/config
-echo "    StrictHostKeyChecking no" >> ~/.ssh/config
+ssh-keyscan github.com >> ~/.ssh/known_hosts
               """
 
               print("Parameters")
