@@ -44,11 +44,9 @@ void call(Map additionalConfig) {
               print("The nomad interface is available only when the tests are running")
 
               sh """
-mkdir -p ~/.ssh
-tee -a ~/.ssh/config <<<EOF
-host github.com
-    StrictHostKeyChecking no
-EOF
+mkdir -p ~/.ssh;
+echo "host github.com" >> ~/.ssh/config
+echo "    StrictHostKeyChecking no" >> ~/.ssh/config
               """
 
               print("Parameters")
