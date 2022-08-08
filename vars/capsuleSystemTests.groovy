@@ -43,6 +43,14 @@ void call(Map additionalConfig) {
               print("You may want to visit the nomad web interface: http://" + publicIP + ":4646")
               print("The nomad interface is available only when the tests are running")
 
+              sh """
+mkdir -p ~/.ssh
+tee -a ~/.ssh/config <<<EOF
+host github.com
+    StrictHostKeyChecking no
+EOF
+              """
+
               print("Parameters")
               print("==========")
               print("${params}")
