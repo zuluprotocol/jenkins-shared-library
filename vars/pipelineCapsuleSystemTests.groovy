@@ -89,6 +89,8 @@ void call() {
                     downstreamBuild = build(
                       job: downstreamBuildName,
                       parameters: childParams,
+                      propagate: true,
+                      wait: true
                     )
                     echo "${downstreamBuild}"
                     echo "${downstreamBuild.absoluteUrl}"
