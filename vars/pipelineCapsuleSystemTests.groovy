@@ -90,10 +90,14 @@ void call() {
                       job: downstreamBuildName,
                       parameters: childParams,
                     )
+                    echo "${downstreamBuild}"
+                    echo "${downstreamBuild.absoluteUrl}"
                   } catch(err) {
                     throw err
                   } finally {
-                    echo "System-Tests pipeline: ${downstreamBuild.absoluteUrl}"
+                    if (downstreamBuild != null) {
+                      echo "System-Tests pipeline: ${downstreamBuild.absoluteUrl}"
+                    }
                     node {
                       def targetDir = 'test-reports-' + name.replaceAll('[^A-Za-z0-9\\._]', '-')
                       copyArtifacts(
