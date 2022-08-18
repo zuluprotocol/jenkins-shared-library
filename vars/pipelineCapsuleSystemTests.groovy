@@ -90,6 +90,8 @@ void call() {
                       job: downstreamBuildName,
                       parameters: childParams,
                     )
+                  } catch(err) {
+                    throw err
                   } finally {
                     echo "System-Tests pipeline: ${downstreamBuild.absoluteUrl}"
                     node {
