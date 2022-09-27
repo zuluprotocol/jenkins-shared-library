@@ -145,13 +145,13 @@ void call(Map config=[:]) {
                             if(TM_VERSION.startsWith("0.34")) {
                                 def net_info_req = new URL("https://${remoteServer}/tm/net_info").openConnection();
                                 def net_info = new groovy.json.JsonSlurperClassic().parseText(net_info_req.getInputStream().getText())
-                                RPC_SERVERS = net_info.result.peers*.node_info.listen_addr.collect{addr -> addr.replaceAll(/26656/, "26657")}.join(",")
+                                RPC_SERVERS = net_info.result.peers*.node_info.listen_addr.collect{addr -> addr.replaceAll(/26656/, "26656")}.join(",")
                                 PERSISTENT_PEERS = net_info.result.peers*.node_info.collect{node -> node.id + "@" + node.listen_addr}.join(",")
                             } else {
                                 def net_info_req = new URL("https://${remoteServer}/tm/net_info").openConnection();
                                 def net_info = new groovy.json.JsonSlurperClassic().parseText(net_info_req.getInputStream().getText())
                                 def servers_with_id = net_info.result.peers*.url.collect{url -> url.replaceAll(/mconn.*\/(.*):.*/, "\$1")}
-                                RPC_SERVERS = servers_with_id.collect{server -> server.split('@')[1] + ":26657"}.join(",")
+                                RPC_SERVERS = servers_with_id.collect{server -> server.split('@')[1] + ":26656"}.join(",")
                                 PERSISTENT_PEERS = servers_with_id.collect{peer -> peer + ":26656"}.join(",")
                             }
 
