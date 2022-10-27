@@ -285,7 +285,7 @@ void call(Map additionalConfig=[:], parametersOverride=[:]) {
           TEST_DIRECTORY= "${params.SYSTEM_TESTS_TEST_DIRECTORY}"
           USE_VEGACAPSULE= 'true'
           SYSTEM_TESTS_DEBUG= "${params.SYSTEM_TESTS_DEBUG}"
-          VEGACAPSULE_BIN_LINUX="${testNetworkDir}/vegacapsule"
+          VEGACAPSULE_BIN_LINUX="/usr/local/bin/vegacapsule"
           SYSTEM_TESTS_LOG_OUTPUT="${testNetworkDir}/log-output"
           PATH = "${networkPath}:${env.PATH}"
           VEGACAPSULE_CONFIG_FILENAME = "${params.CAPSULE_CONFIG}"
@@ -296,6 +296,7 @@ void call(Map additionalConfig=[:], parametersOverride=[:]) {
             Map runStages = [
               'run system-tests': {
                 dir('system-tests/scripts') {
+                    sh 'sudo cp ' + testNetworkDir + '/vegacapsule" /usr/local/bin/vegacapsule'
                     sh 'make test'
                 }
               }
