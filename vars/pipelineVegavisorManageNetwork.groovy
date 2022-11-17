@@ -49,7 +49,9 @@ void call() {
     }
 
     pipeline {
-        agent any
+        agent {
+            label 'test-instance'
+        }
         options {
             skipDefaultCheckout()
             timeout(time: params.TIMEOUT, unit: 'MINUTES')
