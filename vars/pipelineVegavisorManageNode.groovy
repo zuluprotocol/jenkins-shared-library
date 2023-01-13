@@ -263,8 +263,8 @@ void call() {
                                             """
                                         }
                                     }
-    print 'NODE_NAME: ' + NODE_NAME
-    print 'params.NODE' + params.NODE
+    println('NODE_NAME: ' + NODE_NAME)
+    println('params.NODE' + params.NODE)
                                     def stageName = params.ACTION.capitalize().replaceAll('-', ' ')
                                     stage(stageName) {
                                         // Note: environment variables PSSH_KEYFILE and PSSH_USER are set by withCredentials wrapper
