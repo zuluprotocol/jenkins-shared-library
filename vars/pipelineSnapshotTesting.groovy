@@ -433,7 +433,10 @@ void call(Map config=[:]) {
 
                         List snapshotsHeight = snapshotDetails?.snapshots.collect{ it?.height as int }
 
-                        sh 'mkdir -p snapshot-backups/' + env.NET_NAME + '/' + networkVersion + '/' + snapshotsHeight.min() + '-' + snapshotsHeight.max()
+                        Date now = new Date()
+                        String timestamp = now.format("yyyy-MM_dd-HH-mm", TimeZone.getTimeZone('UTC'))
+                        String heightRange = snapshotsHeight.min() + '-' + snapshotsHeight.max()
+                        sh 'mkdir -p snapshot-backups/' + env.NET_NAME + '/' + networkVersion + '/' + heightRange + '-' + timestamp
 
                         sh 'tar -czvf ' + snapshotsHeight.min() + '-' + snapshotsHeight.max() + '.tar.gz vega_config/state/node/snapshots'
                         sh '''cp ''' + snapshotsHeight.min() + '''-''' + snapshotsHeight.max() + '''.tar.gz \
