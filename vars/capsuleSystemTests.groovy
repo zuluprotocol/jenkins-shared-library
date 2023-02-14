@@ -5,6 +5,7 @@ void call(Map additionalConfig=[:], parametersOverride=[:]) {
   Map defaultConfig = [
     hooks: [:],
     agentLabel: 'system-tests-capsule',
+    protocolUpgradeReleaseRepository: 'vegaprotocol/vega-dev-releases',
     extraEnvVars: [:],
   ]
 
@@ -20,7 +21,9 @@ void call(Map additionalConfig=[:], parametersOverride=[:]) {
       postPipeline: [:],
   ] + config.hooks
 
-  String testNetworkDir = ""
+  String testNetworkDir = ''
+
+  String protocolUpgradeVersion = 'v99.9.9-system-tests-' + currentBuild.number
 
   pipeline {
     agent {
@@ -165,26 +168,42 @@ void call(Map additionalConfig=[:], parametersOverride=[:]) {
         }
       }
 
-      // stage('build upgrade binaries') {
-      //   steps {
-      //     script {
-      //       dir('vega') {
-      //           sh label: 'Build upgrade version of vega binary for tests', script: """#!/bin/bash -e
-      //           sed -i 's/"v0.*"/"v99.99.0+dev"/g' version/version.go
-      //           """
-      //       }
-      //       def binaries = [
-      //         [ repository: 'vega', name: 'vega-v99.99.0+dev', packages: './cmd/vega' ],
-      //       ]
-      //       parallel binaries.collectEntries{value -> [
-      //         value.name,
-      //         {
-      //           vegautils.buildGoBinary(value.repository,  testNetworkDir + '/' + value.name, value.packages)
-      //         }
-      //       ]}
-      //     }
-      //   }
-      // }
+      stage('build upgrade binaries') {
+        when {
+          expression {
+            params.BUILD_PROTOCOL_UPGRADE_VERSION
+          }
+        }
+
+        options {
+          timeout(time: 10, unit: 'MINUTES')
+          retry(2)
+        }
+
+        steps {
+          script {
+            sh 'mkdir -p vega/dist'
+            sh '''sed -i 's/^\\s*cliVersion\\s*=\\s*".*"$/cliVersion="''' + protocolUpgradeVersion + '''"/' vega/version/version.go'''
+            vegautils.buildGoBinary('vega', 'dist', './...')
+
+            dir('vega/dist') {
+              sh './vega version'
+              sh './data-node version'
+              sh 'zip data-node-linux-amd64.zip data-node'
+              sh 'zip vega-linux-amd64.zip vega'
+
+              withGHCLI('credentialsId': 'github-vega-ci-bot-artifacts') {
+                sh '''gh release create \
+                    --repo ''' + config.protocolUpgradeReleaseRepository + ''' \
+                    ''' + protocolUpgradeVersion + ''' \
+                    *.zip'''
+              }
+            }
+
+            versionToUpgradeNetwork = 'v77.7.7-jenkins-visor-pup-' + currentBuild.number
+          }
+        }
+      }
 
       stage('start nomad') {
         steps {
@@ -209,6 +228,8 @@ void call(Map additionalConfig=[:], parametersOverride=[:]) {
           PATH = "${networkPath}:${env.PATH}"
           TESTS_DIR = "${testNetworkDir}"
           VEGACAPSULE_CONFIG_FILENAME = "${env.WORKSPACE}/system-tests/vegacapsule/${params.CAPSULE_CONFIG}"
+          PROTOCOL_UPGRADE_EXTERNAL_RELEASE_REPOSITORY = "${params.BUILD_PROTOCOL_UPGRADE_VERSION ? config.protocolUpgradeReleaseRepository : ''}"
+          PROTOCOL_UPGRADE_EXTERNAL_RELEASE_VERSION = "${params.BUILD_PROTOCOL_UPGRADE_VERSION ? params.BUILD_PROTOCOL_UPGRADE_VERSION : ''}"
         }
 
         steps {
@@ -230,6 +251,8 @@ void call(Map additionalConfig=[:], parametersOverride=[:]) {
         }
         environment {
           PATH = "${networkPath}:${env.PATH}"
+          PROTOCOL_UPGRADE_EXTERNAL_RELEASE_REPOSITORY = "${params.BUILD_PROTOCOL_UPGRADE_VERSION ? config.protocolUpgradeReleaseRepository : ''}"
+          PROTOCOL_UPGRADE_EXTERNAL_RELEASE_VERSION = "${params.BUILD_PROTOCOL_UPGRADE_VERSION ? params.BUILD_PROTOCOL_UPGRADE_VERSION : ''}"
         }
 
         steps {
@@ -244,6 +267,8 @@ void call(Map additionalConfig=[:], parametersOverride=[:]) {
           PATH = "${networkPath}:${env.PATH}"
           TESTS_DIR = "${testNetworkDir}"
           VEGACAPSULE_CONFIG_FILENAME = "${env.WORKSPACE}/system-tests/vegacapsule/${params.CAPSULE_CONFIG}"
+          PROTOCOL_UPGRADE_EXTERNAL_RELEASE_REPOSITORY = "${params.BUILD_PROTOCOL_UPGRADE_VERSION ? config.protocolUpgradeReleaseRepository : ''}"
+          PROTOCOL_UPGRADE_EXTERNAL_RELEASE_VERSION = "${params.BUILD_PROTOCOL_UPGRADE_VERSION ? params.BUILD_PROTOCOL_UPGRADE_VERSION : ''}"
         }
 
         steps {
@@ -282,6 +307,8 @@ void call(Map additionalConfig=[:], parametersOverride=[:]) {
         }
         environment {
           PATH = "${env.PATH}:${networkPath}"
+          PROTOCOL_UPGRADE_EXTERNAL_RELEASE_REPOSITORY = "${params.BUILD_PROTOCOL_UPGRADE_VERSION ? config.protocolUpgradeReleaseRepository : ''}"
+          PROTOCOL_UPGRADE_EXTERNAL_RELEASE_VERSION = "${params.BUILD_PROTOCOL_UPGRADE_VERSION ? params.BUILD_PROTOCOL_UPGRADE_VERSION : ''}"
         }
 
         options {
@@ -314,6 +341,8 @@ void call(Map additionalConfig=[:], parametersOverride=[:]) {
           SYSTEM_TESTS_LOG_OUTPUT="${testNetworkDir}/log-output"
           PATH = "${networkPath}:${env.PATH}"
           VEGACAPSULE_CONFIG_FILENAME = "${env.WORKSPACE}/system-tests/vegacapsule/${params.CAPSULE_CONFIG}"
+          PROTOCOL_UPGRADE_EXTERNAL_RELEASE_REPOSITORY = "${params.BUILD_PROTOCOL_UPGRADE_VERSION ? config.protocolUpgradeReleaseRepository : ''}"
+          PROTOCOL_UPGRADE_EXTERNAL_RELEASE_VERSION = "${params.BUILD_PROTOCOL_UPGRADE_VERSION ? params.BUILD_PROTOCOL_UPGRADE_VERSION : ''}"
         }
 
         steps {
@@ -504,6 +533,20 @@ void call(Map additionalConfig=[:], parametersOverride=[:]) {
         catchError {
           dir(testNetworkDir) {
             sh './vegacapsule network stop --home-path ' + testNetworkDir + '/testnet 2>/dev/null'
+          }
+        }
+
+        catchError {
+          script {
+            if (params.BUILD_PROTOCOL_UPGRADE_VERSION) {
+              withGHCLI('credentialsId': 'github-vega-ci-bot-artifacts') {
+                sh '''gh release delete \
+                    --yes \
+                    --repo ''' + config.protocolUpgradeReleaseRepository + ''' \
+                    ''' + protocolUpgradeVersion + ''' \
+                | echo "Release does not exist"'''
+              }
+            }
           }
         }
 
