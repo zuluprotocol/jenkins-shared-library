@@ -112,11 +112,20 @@ void call() {
                   if (params.SCENARIO == 'NIGHTLY') {
                     childParams += [booleanParam(name: 'ARCHIVE_VEGA_BINARY', value: true)]
                   }
-                  RunWrapper downstreamBuild = build(
-                    job: downstreamBuildName,
-                    parameters: childParams,
-                    propagate: false,  // don't fail yet
-                  )
+                  RunWrapper downstreamBuild
+                  try {
+                    downstreamBuild = build(
+                      job: downstreamBuildName,
+                      parameters: childParams,
+                      propagate: false,  // don't fail yet
+                    )
+                  } catch(err) {
+                    print("Build error:" + err)
+                  }
+                  print("RESULT>>>>>")
+                  print(downstreamBuild)
+                  print(downstreamBuild.result)
+                  print("RESULT_END>>>>>")
                   if (params.SCENARIO == 'NIGHTLY') {
                     build (
                       job: 'common/snapshot-soak-tests',
